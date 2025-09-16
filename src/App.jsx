@@ -1,11 +1,11 @@
-import React, { use, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 
 function App() {
 
   const [users, setUsers] = useState({ name: "", email: "", phone: "" })
   const [userdata, setUserData] = useState([])
-  const [edituser, setEdituser] = useState(false)
+  const [edituser, setEdituser] = useState(null)
 
 
   useEffect(() => {
@@ -26,6 +26,28 @@ function App() {
         userdatacopy.push(newUser)
         setUserData(userdatacopy)
         setUsers({ name: "", email: "", phone: "" })
+      })
+      .catch((err) => console.log("Error", err))
+  }
+
+  const handleEdit = (id) => {
+    let userToEdit = userdata.find((user) => user.id === id)
+    setUsers({ name: userToEdit.name, email: userToEdit.email, phone: userToEdit.phone })
+    setEdituser(id)
+  }
+
+
+  // this handleupdate function only updates the server data not the local state
+  const handleUpdate = () => {
+    axios.put(`https://jsonplaceholder.typicode.com/users/${edituser}`, users)
+      .then((res) => {
+        let usertocopy = [...userdata]
+        let index = usertocopy.findIndex((user) => user.id === edituser)
+        console.log(edituser)
+        usertocopy[index] = { ...res.data, id: edituser }  // keep the id
+        setUserData(usertocopy)
+        setUsers({ name: "", email: "", phone: "" })
+        setEdituser(null)
       })
       .catch((err) => console.log("Error", err))
   }
@@ -61,7 +83,9 @@ function App() {
         </div>
       </div>
       <div className='flex justify-center'>
-        <button className='bg-blue-800 text-white px-4 py-2 text-xl rounded-md' onClick={handleAddUser}>Add user</button>
+        {edituser !== null
+          ? <button className='bg-blue-800 text-white px-4 py-2 text-xl rounded-md' onClick={handleUpdate}>Update user</button>
+          : <button className='bg-blue-800 text-white px-4 py-2 text-xl rounded-md' onClick={handleAddUser}>Add user</button>}
       </div>
       <hr className='border border-slate-300 m-4 ' />
       <div className='bg-white min-h-auto mx-4 rounded-md p-3'>
@@ -83,7 +107,7 @@ function App() {
                 <td className='border border-slate-200 px-2 text-gray-500'>{user.name}</td>
                 <td className='border border-slate-200 px-2 text-gray-500'>{user.email}</td>
                 <td className='border border-slate-200 px-2 text-gray-500'>{user.phone}</td>
-                <td className='border border-slate-200 text-center text-gray-500'><button className='bg-green-800 px-3 py-1 text-white rounded-sm'>Edit</button></td>
+                <td className='border border-slate-200 text-center text-gray-500'><button className='bg-green-800 px-3 py-1 text-white rounded-sm' onClick={() => handleEdit(user.id)}>Edit</button></td>
                 <td className='border border-slate-200 text-center text-gray-500'><button className='bg-red-800 px-3 py-1 text-white rounded-sm' onClick={() => handleDelete(user.id)}>Delete</button></td>
               </tr>
             ))}
